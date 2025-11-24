@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Reservas - Panel de Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Menú Hamburguesa */
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .menu-toggle.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #1e3c72;
+            transition: all 0.3s;
+        }
+
+        /* Botón de Retroceso */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            transition: opacity 0.3s, visibility 0.3s;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .back-button.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Menú Lateral */
+        .sidebar-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .sidebar-menu.active {
+            left: 0;
+        }
+
+        .logo {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid #eaeaea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            color: #1e3c72;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .menu-items {
+            list-style: none;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: #f1f5fd;
+        }
+
+        .menu-item.active {
+            background: #f1f5fd;
+            border-left: 4px solid #2a5298;
+        }
+
+        .menu-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Contenido Principal */
+        .main-content {
+            min-height: 100vh;
+            padding: 80px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-title {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        /* Secciones de Contenido */
+        .content-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 1000px;
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .section-header h2 {
+            color: #1e3c72;
+            font-size: 1.4rem;
+        }
+
+        .section-body {
+            padding: 25px;
+        }
+
+        /* Reservas de Hoy */
+        .reservations-list {
+            list-style-type: none;
+        }
+
+        .reservation-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #2196F3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .reservation-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .reservation-info h3 {
+            margin-bottom: 8px;
+            color: #1e3c72;
+            font-size: 1.2rem;
+        }
+
+        .reservation-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .reservation-time {
+            background: #ff9800;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .no-reservations {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border-top: 4px solid #2a5298;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #2a5298;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-trend {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .trend-up {
+            color: #4CAF50;
+        }
+
+        .trend-down {
+            color: #f44336;
+        }
+
+        /* Gráficos */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 20px;
+            color: #1e3c72;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: linear-gradient(135deg, #f1f5fd 0%, #e3ebf7 100%);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #2a5298;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* Calendario */
+        .calendar-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f1f5fd;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .month-year {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3c72;
+            margin: 10px 0;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .nav-btn {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            background: #1e3c72;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .calendar-day {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            background: #f1f5fd;
+            border-radius: 5px;
+        }
+
+        .calendar-date {
+            padding: 12px 5px;
+            text-align: center;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .calendar-date:hover {
+            background: #f0f7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-date.selected {
+            background: #2a5298;
+            color: white;
+        }
+
+        .calendar-date.disabled {
+            background: #f8f9fa;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .calendar-date.has-reservation {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .date-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .reservation-count {
+            font-size: 0.8rem;
+            background: #4CAF50;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            margin-top: 5px;
+            align-self: center;
+        }
+
+        /* Formularios */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1e3c72;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        /* Tablas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Overlay para cerrar menú */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar-menu {
+                width: 280px;
+                left: -280px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+
+            .reservation-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .reservation-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .reservation-time {
+                align-self: flex-end;
+            }
+
+            .main-content {
+                padding: 70px 15px 15px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-grid {
+                gap: 4px;
+            }
+
+            .calendar-date {
+                min-height: 60px;
+                padding: 8px 2px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .menu-toggle, .back-button {
+                top: 15px;
+                left: 15px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .page-title {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Botón Menú Hamburguesa -->
+    <button class="menu-toggle" id="menuToggle">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Botón de Retroceso -->
+    <button class="back-button" id="backButton">
+        ←
+    </button>
+
+    <!-- Overlay para cerrar menú -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+
+    <!-- Menú Lateral -->
+    <div class="sidebar-menu" id="sidebarMenu">
+        <div class="logo">
+            <h1>RestaurantPro</h1>
+            <p>Sistema de Reservas</p>
+        </div>
+        <ul class="menu-items">
+            <li class="menu-item active" data-section="dashboard">
+                <span class="menu-icon">📊</span>
+                <span>Dashboard</span>
+            </li>
+            <li class="menu-item" data-section="calendar">
+                <span class="menu-icon">📅</span>
+                <span>Calendario</span>
+            </li>
+            <li class="menu-item" data-section="reservations">
+                <span class="menu-icon">👥</span>
+                <span>Reservas</span>
+            </li>
+            <li class="menu-item" data-section="tables">
+                <span class="menu-icon">🍽️</span>
+                <span>Mesas</span>
+            </li>
+            <li class="menu-item" data-section="customers">
+                <span class="menu-icon">👨‍💼</span>
+                <span>Clientes</span>
+            </li>
+            <li class="menu-item" data-section="reports">
+                <span class="menu-icon">📈</span>
+                <span>Reportes</span>
+            </li>
+            <li class="menu-item" data-section="settings">
+                <span class="menu-icon">⚙️</span>
+                <span>Configuración</span>
+            </li>
+            <li class="menu-item" data-section="help">
+                <span class="menu-icon">❓</span>
+                <span>Ayuda</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        <h1 class="page-title" id="pageTitle">Panel de Control</h1>
+
+        <!-- Sección: Dashboard -->
+        <div class="content-section active" id="dashboard">
+            <!-- Reservas de Hoy -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Reservas de Hoy</h2>
+                </div>
+                <div class="section-body">
+                    <ul class="reservations-list" id="today-reservations">
+                        <div class="no-reservations">
+                            No hay reservas para hoy
+                        </div>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Analíticas -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Analíticas del Mes</h2>
+                </div>
+                <div class="section-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Reservas Totales</div>
+                            <div class="stat-value" id="total-reservations">0</div>
+                            <div class="stat-trend trend-up">+12% vs mes anterior</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Tasa de Ocupación</div>
+                            <div class="stat-value" id="occupancy-rate">0%</div>
+                            <div class="stat-trend trend-up">+5% vs mes anterior</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Clientes Recurrentes</div>
+                            <div class="stat-value" id="recurrent-clients">0%</div>
+                            <div class="stat-trend trend-up">+8% vs mes anterior</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ingresos Estimados</div>
+                            <div class="stat-value" id="estimated-revenue">$0.00</div>
+                            <div class="stat-trend trend-up">+15% vs mes anterior</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h3>Reservas por Día de la Semana</h3>
+                            <div class="chart-placeholder">
+                                Gráfico de Reservas por Día
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Horarios Más Populares</h3>
+                            <div class="chart-placeholder">
+                                Gráfico de Horarios
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Calendario -->
+        <div class="content-section" id="calendar">
+            <div class="section-header">
+                <h2>Calendario de Reservas</h2>
+            </div>
+            <div class="section-body">
+                <div class="calendar-header">
+                    <div class="month-year" id="current-month">Noviembre 2024</div>
+                    <div class="nav-controls">
+                        <button class="nav-btn" id="prev-month">← Mes Anterior</button>
+                        <button class="nav-btn" id="next-month">Mes Siguiente →</button>
+                    </div>
+                </div>
+                
+                <div class="calendar-grid" id="calendar-days">
+                    <!-- Días de la semana -->
+                    <div class="calendar-day">Dom</div>
+                    <div class="calendar-day">Lun</div>
+                    <div class="calendar-day">Mar</div>
+                    <div class="calendar-day">Mié</div>
+                    <div class="calendar-day">Jue</div>
+                    <div class="calendar-day">Vie</div>
+                    <div class="calendar-day">Sáb</div>
+                    <!-- Las fechas se generan con JavaScript -->
+                </div>
+
+                <div class="reservation-form">
+                    <h3>Nueva Reserva</h3>
+                    <form id="new-reservation-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reservation-date">Fecha de Reserva</label>
+                                <input type="text" id="reservation-date" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="reservation-time">Hora de Reserva *</label>
+                                <input type="time" id="reservation-time" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customer-name">Nombre del Cliente *</label>
+                                <input type="text" id="customer-name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-phone">Teléfono *</label>
+                                <input type="tel" id="customer-phone" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="party-size">Número de Personas *</label>
+                                <select id="party-size" class="form-control" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="1">1 persona</option>
+                                    <option value="2">2 personas</option>
+                                    <option value="3">3 personas</option>
+                                    <option value="4">4 personas</option>
+                                    <option value="5">5 personas</option>
+                                    <option value="6">6 personas</option>
+                                    <option value="7">7 personas</option>
+                                    <option value="8">8 personas</option>
+                                    <option value="9">9 personas</option>
+                                    <option value="10">10 personas</option>
+                                    <option value="11">Más de 10 personas</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="table-number">Número de Mesa</label>
+                                <input type="text" id="table-number" class="form-control" placeholder="Opcional">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="special-requests">Solicitudes Especiales</label>
+                            <textarea id="special-requests" class="form-control" rows="3" placeholder="Alergias, preferencias, celebraciones..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-block">Registrar Reserva</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Reservas -->
+        <div class="content-section" id="reservations">
+            <div class="section-header">
+                <h2>Gestión de Reservas</h2>
+            </div>
+            <div class="section-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Reservas Activas</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-trend">Sin datos previos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Reservas Pendientes</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-trend">Sin datos previos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Cancelaciones</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-trend">Sin datos previos</div>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Personas</th>
+                            <th>Mesa</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservations-table-body">
+                        <!-- Las reservas se cargan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección: Mesas -->
+        <div class="content-section" id="tables">
+            <div class="section-header">
+                <h2>Gestión de Mesas</h2>
+            </div>
+            <div class="section-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Mesas</div>
+                        <div class="stat-value">15</div>
+                        <div class="stat-label">Capacidad total: 80 personas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Mesas Ocupadas</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">0% ocupación</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Mesas Disponibles</div>
+                        <div class="stat-value">15</div>
+                        <div class="stat-label">100% disponibles</div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Distribución de Mesas</h3>
+                        <div class="chart-placeholder">
+                            Mapa de Distribución de Mesas
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Ocupación por Zona</h3>
+                        <div class="chart-placeholder">
+                            Gráfico de Ocupación por Zona
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Clientes -->
+        <div class="content-section" id="customers">
+            <div class="section-header">
+                <h2>Gestión de Clientes</h2>
+            </div>
+            <div class="section-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Clientes Totales</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-trend">Sin datos previos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Clientes Recurrentes</div>
+                        <div class="stat-value">0%</div>
+                        <div class="stat-trend">Sin datos previos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Nuevos Clientes</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-trend">Sin datos previos</div>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                            <th>Reservas</th>
+                            <th>Última Visita</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customers-table-body">
+                        <!-- Los clientes se cargan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección: Reportes -->
+        <div class="content-section" id="reports">
+            <div class="section-header">
+                <h2>Reportes y Analíticas</h2>
+            </div>
+            <div class="section-body">
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Ingresos Mensuales</h3>
+                        <div class="chart-placeholder">
+                            Gráfico de Ingresos Mensuales
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Clientes por Horario</h3>
+                        <div class="chart-placeholder">
+                            Gráfico de Clientes por Horario
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Platos Más Populares</h3>
+                        <div class="chart-placeholder">
+                            Gráfico de Platos Populares
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Satisfacción del Cliente</h3>
+                        <div class="chart-placeholder">
+                            Gráfico de Satisfacción
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Configuración -->
+        <div class="content-section" id="settings">
+            <div class="section-header">
+                <h2>Configuración del Sistema</h2>
+            </div>
+            <div class="section-body">
+                <div class="form-group">
+                    <label>Nombre del Restaurante</label>
+                    <input type="text" class="form-control" value="RestaurantPro" placeholder="Nombre del restaurante">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Horario de Apertura</label>
+                        <input type="time" class="form-control" value="12:00">
+                    </div>
+                    <div class="form-group">
+                        <label>Horario de Cierre</label>
+                        <input type="time" class="form-control" value="23:00">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Días de Operación</label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <label><input type="checkbox" checked> Lunes</label>
+                        <label><input type="checkbox" checked> Martes</label>
+                        <label><input type="checkbox" checked> Miércoles</label>
+                        <label><input type="checkbox" checked> Jueves</label>
+                        <label><input type="checkbox" checked> Viernes</label>
+                        <label><input type="checkbox" checked> Sábado</label>
+                        <label><input type="checkbox"> Domingo</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Capacidad Máxima</label>
+                    <input type="number" class="form-control" value="80" placeholder="Capacidad máxima">
+                </div>
+                
+                <button class="btn btn-block">Guardar Configuración</button>
+            </div>
+        </div>
+
+        <!-- Sección: Ayuda -->
+        <div class="content-section" id="help">
+            <div class="section-header">
+                <h2>Centro de Ayuda</h2>
+            </div>
+            <div class="section-body">
+                <div class="form-group">
+                    <h3>Preguntas Frecuentes</h3>
+                    <div style="margin: 20px 0;">
+                        <p><strong>¿Cómo crear una nueva reserva?</strong></p>
+                        <p>Ve a la sección "Calendario", selecciona una fecha y completa el formulario de reserva.</p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <p><strong>¿Cómo modificar una reserva existente?</strong></p>
+                        <p>En la sección "Reservas", busca la reserva y haz clic en el botón editar.</p>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <p><strong>¿Cómo generar reportes?</strong></p>
+                        <p>La sección "Reportes" contiene todas las analíticas y estadísticas del sistema.</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <h3>Soporte Técnico</h3>
+                    <p>Email: soporte@restaurantpro.com</p>
+                    <p>Teléfono: +1 234 567 8900</p>
+                    <p>Horario de atención: Lunes a Viernes 9:00 - 18:00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentDate = new Date();
+        let selectedDate = null;
+        let reservations = JSON.parse(localStorage.getItem('restaurant_reservations')) || {};
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateStatistics();
+            updateTodayReservations();
+            generateCalendar();
+            updateAllTables();
+        });
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Toggle del menú
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebarMenu = document.getElementById('sidebarMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const backButton = document.getElementById('backButton');
+
+            menuToggle.addEventListener('click', function() {
+                const isActive = sidebarMenu.classList.toggle('active');
+                menuOverlay.classList.toggle('active');
+                
+                // Ocultar el botón del menú cuando el menú lateral está activo
+                if (isActive) {
+                    menuToggle.classList.add('hidden');
+                } else {
+                    // Mostrar el botón del menú solo si estamos en el dashboard
+                    const currentSection = document.querySelector('.content-section.active').id;
+                    if (currentSection === 'dashboard') {
+                        menuToggle.classList.remove('hidden');
+                    }
+                }
+            });
+
+            menuOverlay.addEventListener('click', function() {
+                sidebarMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                
+                // Mostrar el botón del menú cuando se cierra el menú lateral
+                const currentSection = document.querySelector('.content-section.active').id;
+                if (currentSection === 'dashboard') {
+                    menuToggle.classList.remove('hidden');
+                }
+            });
+
+            // Botón de retroceso
+            backButton.addEventListener('click', function() {
+                showSection('dashboard');
+                
+                // Actualizar menú activo
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector('.menu-item[data-section="dashboard"]').classList.add('active');
+            });
+
+            // Navegación del menú
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    
+                    // Actualizar menú activo
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Mostrar sección correspondiente
+                    showSection(sectionId);
+                    
+                    // Controlar visibilidad de botones
+                    toggleNavigationButtons(sectionId);
+                    
+                    // Cerrar menú automáticamente
+                    sidebarMenu.classList.remove('active');
+                    menuOverlay.classList.remove('active');
+                    
+                    // Mostrar botón del menú solo si estamos en dashboard
+                    if (sectionId === 'dashboard') {
+                        menuToggle.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Navegación del calendario
+            document.getElementById('prev-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                generateCalendar();
+            });
+            
+            document.getElementById('next-month').addEventListener('click', function() {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                generateCalendar();
+            });
+
+            // Selección de fecha en calendario
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('calendar-date') && 
+                    !e.target.classList.contains('disabled')) {
+                    
+                    // Remover selección anterior
+                    document.querySelectorAll('.calendar-date.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    // Seleccionar nueva fecha
+                    e.target.classList.add('selected');
+                    selectedDate = e.target.dataset.date;
+                    updateFormDate(selectedDate);
+                }
+            });
+
+            // Formulario de reserva
+            document.getElementById('new-reservation-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createReservation();
+            });
+
+            // Swipe para cerrar menú en móviles
+            let startX = 0;
+            let currentX = 0;
+
+            sidebarMenu.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+            });
+
+            sidebarMenu.addEventListener('touchmove', function(e) {
+                currentX = e.touches[0].clientX;
+            });
+
+            sidebarMenu.addEventListener('touchend', function() {
+                if (currentX < startX - 50) {
+                    sidebarMenu.classList.remove('active');
+                    menuOverlay.classList.remove('active');
+                    
+                    // Mostrar botón del menú si estamos en dashboard
+                    const currentSection = document.querySelector('.content-section.active').id;
+                    if (currentSection === 'dashboard') {
+                        document.getElementById('menuToggle').classList.remove('hidden');
+                    }
+                }
+            });
+
+            // Swipe para volver al dashboard desde cualquier sección
+            const mainContent = document.querySelector('.main-content');
+            let contentStartX = 0;
+            let contentCurrentX = 0;
+
+            mainContent.addEventListener('touchstart', function(e) {
+                contentStartX = e.touches[0].clientX;
+            });
+
+            mainContent.addEventListener('touchmove', function(e) {
+                contentCurrentX = e.touches[0].clientX;
+            });
+
+            mainContent.addEventListener('touchend', function() {
+                // Si deslizamos de derecha a izquierda y no estamos en el dashboard
+                const currentSection = document.querySelector('.content-section.active').id;
+                if (contentCurrentX < contentStartX - 100 && currentSection !== 'dashboard') {
+                    showSection('dashboard');
+                    document.querySelectorAll('.menu-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    document.querySelector('.menu-item[data-section="dashboard"]').classList.add('active');
+                }
+            });
+        }
+
+        // Controlar visibilidad de botones de navegación
+        function toggleNavigationButtons(sectionId) {
+            const menuToggle = document.getElementById('menuToggle');
+            const backButton = document.getElementById('backButton');
+            
+            if (sectionId === 'dashboard') {
+                // En el dashboard: mostrar botón menú, ocultar botón retroceso
+                menuToggle.classList.remove('hidden');
+                backButton.classList.remove('active');
+            } else {
+                // En otras secciones: ocultar botón menú, mostrar botón retroceso
+                menuToggle.classList.add('hidden');
+                backButton.classList.add('active');
+            }
+        }
+
+        // Mostrar sección específica
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Mostrar sección seleccionada
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Actualizar título de la página
+            const pageTitle = document.getElementById('pageTitle');
+            const sectionTitles = {
+                'dashboard': 'Panel de Control',
+                'calendar': 'Calendario de Reservas',
+                'reservations': 'Gestión de Reservas',
+                'tables': 'Gestión de Mesas',
+                'customers': 'Gestión de Clientes',
+                'reports': 'Reportes y Analíticas',
+                'settings': 'Configuración del Sistema',
+                'help': 'Centro de Ayuda'
+            };
+            
+            pageTitle.textContent = sectionTitles[sectionId] || 'Panel de Control';
+            
+            // Controlar visibilidad de botones
+            toggleNavigationButtons(sectionId);
+        }
+
+        // Generar calendario
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar-days');
+            const monthYear = document.getElementById('current-month');
+            
+            // Limpiar calendario (excepto días de la semana)
+            while (calendar.children.length > 7) {
+                calendar.removeChild(calendar.lastChild);
+            }
+            
+            // Actualizar mes actual
+            monthYear.textContent = currentDate.toLocaleDateString('es-ES', { 
+                month: 'long', 
+                year: 'numeric' 
+            });
+            
+            // Obtener primer día del mes y último día
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            
+            // Agregar días vacíos para alinear el primer día
+            const startingDay = firstDay.getDay();
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'calendar-date disabled';
+                calendar.appendChild(emptyDiv);
+            }
+            
+            // Agregar días del mes
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'calendar-date';
+                
+                const dateNumber = document.createElement('div');
+                dateNumber.className = 'date-number';
+                dateNumber.textContent = day;
+                dateDiv.appendChild(dateNumber);
+                
+                const dateKey = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                dateDiv.dataset.date = dateKey;
+                
+                // Verificar si hay reservas para esta fecha
+                if (reservations[dateKey] && reservations[dateKey].length > 0) {
+                    dateDiv.classList.add('has-reservation');
+                    const countBadge = document.createElement('div');
+                    countBadge.className = 'reservation-count';
+                    countBadge.textContent = reservations[dateKey].length;
+                    dateDiv.appendChild(countBadge);
+                }
+                
+                // Deshabilitar fechas pasadas
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                if (date < new Date().setHours(0,0,0,0)) {
+                    dateDiv.classList.add('disabled');
+                }
+                
+                calendar.appendChild(dateDiv);
+            }
+        }
+
+        // Actualizar fecha en el formulario
+        function updateFormDate(dateString) {
+            const date = new Date(dateString);
+            const formattedDate = date.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('reservation-date').value = formattedDate;
+        }
+
+        // Crear nueva reserva
+        function createReservation() {
+            if (!selectedDate) {
+                alert('Por favor, selecciona una fecha primero.');
+                return;
+            }
+            
+            const customerName = document.getElementById('customer-name').value;
+            const customerPhone = document.getElementById('customer-phone').value;
+            const reservationTime = document.getElementById('reservation-time').value;
+            const partySize = document.getElementById('party-size').value;
+            const tableNumber = document.getElementById('table-number').value;
+            const specialRequests = document.getElementById('special-requests').value;
+            
+            // Validaciones básicas
+            if (!customerName || !customerPhone || !reservationTime || !partySize) {
+                alert('Por favor, completa todos los campos obligatorios (*).');
+                return;
+            }
+            
+            // Crear objeto de reserva
+            const reservation = {
+                id: Date.now(),
+                customerName,
+                customerPhone,
+                date: selectedDate,
+                time: reservationTime,
+                partySize,
+                tableNumber,
+                specialRequests,
+                createdAt: new Date().toISOString(),
+                status: 'confirmada'
+            };
+            
+            // Agregar a las reservas
+            if (!reservations[selectedDate]) {
+                reservations[selectedDate] = [];
+            }
+            reservations[selectedDate].push(reservation);
+            
+            // Guardar en localStorage
+            localStorage.setItem('restaurant_reservations', JSON.stringify(reservations));
+            
+            // Actualizar interfaz
+            generateCalendar();
+            updateStatistics();
+            updateTodayReservations();
+            updateAllTables();
+            
+            // Limpiar formulario
+            document.getElementById('new-reservation-form').reset();
+            document.getElementById('reservation-date').value = '';
+            selectedDate = null;
+            
+            // Remover selección del calendario
+            document.querySelectorAll('.calendar-date.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            alert('Reserva registrada exitosamente');
+        }
+
+        // Actualizar estadísticas
+        function updateStatistics() {
+            const today = new Date();
+            const currentMonth = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+            let monthReservations = 0;
+            let uniqueCustomers = new Set();
+            let totalRevenue = 0;
+            
+            Object.keys(reservations).forEach(date => {
+                if (date.startsWith(currentMonth)) {
+                    monthReservations += reservations[date].length;
+                    reservations[date].forEach(reservation => {
+                        uniqueCustomers.add(reservation.customerPhone);
+                        totalRevenue += reservation.partySize * 25; // Estimación de $25 por persona
+                    });
+                }
+            });
+            
+            // Actualizar UI
+            document.getElementById('total-reservations').textContent = monthReservations;
+            document.getElementById('occupancy-rate').textContent = Math.min(100, Math.floor(monthReservations * 1.5)) + '%';
+            document.getElementById('recurrent-clients').textContent = Math.min(50, Math.floor(uniqueCustomers.size * 2)) + '%';
+            document.getElementById('estimated-revenue').textContent = '$' + totalRevenue.toFixed(2);
+        }
+
+        // Actualizar reservas de hoy
+        function updateTodayReservations() {
+            const todayReservationsList = document.getElementById('today-reservations');
+            todayReservationsList.innerHTML = '';
+            
+            const today = new Date();
+            const todayString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+            
+            const todayReservations = reservations[todayString] || [];
+            
+            if (todayReservations.length === 0) {
+                todayReservationsList.innerHTML = '<div class="no-reservations">No hay reservas para hoy</div>';
+                return;
+            }
+            
+            // Ordenar reservas por hora
+            todayReservations.sort((a, b) => a.time.localeCompare(b.time));
+            
+            todayReservations.forEach(reservation => {
+                const li = document.createElement('li');
+                li.className = 'reservation-item';
+                li.innerHTML = `
+                    <div class="reservation-info">
+                        <h3>${reservation.customerName}</h3>
+                        <div class="reservation-meta">
+                            <span>${reservation.partySize} personas</span>
+                            <span>Mesa ${reservation.tableNumber || 'Por asignar'}</span>
+                            <span>Tel: ${reservation.customerPhone}</span>
+                        </div>
+                    </div>
+                    <div class="reservation-time">${reservation.time}</div>
+                `;
+                todayReservationsList.appendChild(li);
+            });
+        }
+
+        // Actualizar todas las tablas de datos
+        function updateAllTables() {
+            updateReservationsTable();
+            updateCustomersTable();
+        }
+
+        // Actualizar tabla de reservas
+        function updateReservationsTable() {
+            const tableBody = document.getElementById('reservations-table-body');
+            tableBody.innerHTML = '';
+            
+            // Obtener todas las reservas
+            const allReservations = [];
+            Object.keys(reservations).forEach(date => {
+                reservations[date].forEach(reservation => {
+                    allReservations.push({
+                        ...reservation,
+                        date: date
+                    });
+                });
+            });
+            
+            if (allReservations.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No hay reservas registradas</td></tr>';
+                return;
+            }
+            
+            // Ordenar por fecha
+            allReservations.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            allReservations.forEach(reservation => {
+                const tr = document.createElement('tr');
+                const formattedDate = new Date(reservation.date).toLocaleDateString('es-ES');
+                
+                tr.innerHTML = `
+                    <td>${reservation.customerName}</td>
+                    <td>${formattedDate}</td>
+                    <td>${reservation.time}</td>
+                    <td>${reservation.partySize}</td>
+                    <td>${reservation.tableNumber || 'Por asignar'}</td>
+                    <td>${reservation.status}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Actualizar tabla de clientes
+        function updateCustomersTable() {
+            const tableBody = document.getElementById('customers-table-body');
+            tableBody.innerHTML = '';
+            
+            // Obtener todos los clientes únicos
+            const customers = new Map();
+            
+            Object.keys(reservations).forEach(date => {
+                reservations[date].forEach(reservation => {
+                    if (!customers.has(reservation.customerPhone)) {
+                        customers.set(reservation.customerPhone, {
+                            name: reservation.customerName,
+                            phone: reservation.customerPhone,
+                            reservations: 1,
+                            lastVisit: date
+                        });
+                    } else {
+                        const customer = customers.get(reservation.customerPhone);
+                        customer.reservations++;
+                        if (new Date(date) > new Date(customer.lastVisit)) {
+                            customer.lastVisit = date;
+                        }
+                    }
+                });
+            });
+            
+            if (customers.size === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No hay clientes registrados</td></tr>';
+                return;
+            }
+            
+            // Convertir a array y ordenar por número de reservas
+            const customersArray = Array.from(customers.values());
+            customersArray.sort((a, b) => b.reservations - a.reservations);
+            
+            customersArray.forEach(customer => {
+                const tr = document.createElement('tr');
+                const lastVisit = new Date(customer.lastVisit).toLocaleDateString('es-ES');
+                
+                tr.innerHTML = `
+                    <td>${customer.name}</td>
+                    <td>${customer.phone}</td>
+                    <td>${customer.phone}@email.com</td>
+                    <td>${customer.reservations}</td>
+                    <td>${lastVisit}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
